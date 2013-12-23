@@ -1,0 +1,20 @@
+- name: Gather info about servers
+  hosts: test
+  gather_facts: False
+  tasks:
+    - name: Get facts about servers
+      local_action:
+        module: rax_facts
+        credentials: ~/.raxpub
+        name: "{{ inventory_hostname }}"
+        #address: 162.242.170.162
+        #address: >
+        #  "2001:4801:7822:0103:8ff8:be95:ff10:890b"
+        #address: "10.209.64.59"
+        #id: dff56d00-d06b-4112-821a-3096b8e90b74
+        region: IAD
+    - debug: var=hostvars[inventory_hostname]
+    - name: Map some facts
+      set_fact:
+        ansible_ssh_host: "{{ rax_accessipv4 }}"
+    - debug: var=ansible_ssh_host
