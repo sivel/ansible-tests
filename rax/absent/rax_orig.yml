@@ -1,0 +1,15 @@
+- name: Create a server
+  hosts: local
+  gather_facts: False
+  tasks:
+    - name: Server build requests
+      local_action:
+        module: rax
+        credentials: ~/.raxpub
+        name: test
+        flavor: performance1-1
+        image: ubuntu-1204-lts-precise-pangolin
+        region: IAD
+        state: absent
+        wait: yes
+      register: rax

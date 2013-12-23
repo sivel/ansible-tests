@@ -1,0 +1,18 @@
+- name: Create several servers and put them in a group
+  hosts: local
+  gather_facts: False
+  tasks:
+    - name: Server build requests
+      local_action:
+        module: rax
+        credentials: ~/.raxpub
+        name: test%03d.example.org
+        flavor: performance1-1
+        image: ubuntu-1204-lts-precise-pangolin
+        disk_config: manual
+        region: IAD
+        state: present
+        count: 2
+        group: test
+        wait: yes
+      register: rax

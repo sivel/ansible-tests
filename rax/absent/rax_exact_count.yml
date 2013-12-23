@@ -1,0 +1,20 @@
+- name: Create an exact count of servers
+  hosts: local
+  gather_facts: False
+  tasks:
+    - name: Server build requests
+      local_action:
+        module: rax
+        credentials: ~/.raxpub
+        name: test%03d.example.org
+        flavor: performance1-1
+        image: ubuntu-1204-lts-precise-pangolin
+        disk_config: manual
+        region: IAD
+        state: present
+        count: 0
+        count_offset: 10
+        exact_count: yes
+        group: test
+        wait: yes
+      register: rax
