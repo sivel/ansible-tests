@@ -1,0 +1,14 @@
+- name: Create a domain
+  gather_facts: False
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Domain create request
+      local_action:
+        module: rax_dns
+        credentials: ~/.raxpub
+        name: raxtest.net
+        state: present
+        email: admin@raxtest.net
+        comment: foo
+      register: rax_dns

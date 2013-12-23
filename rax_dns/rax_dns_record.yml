@@ -1,0 +1,16 @@
+- name: Create a record
+  gather_facts: False
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: record create request
+      local_action:
+        module: rax_dns_record
+        credentials: ~/.raxpub
+        domain: raxtest.net
+        name: foo.raxtest.net
+        state: present
+        data: 127.0.0.1
+        type: A
+        comment: foo
+      register: rax_dns_record
