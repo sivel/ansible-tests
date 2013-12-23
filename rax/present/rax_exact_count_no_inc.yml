@@ -1,5 +1,5 @@
 - name: Create an exact count of servers but do not increment name
-  hosts: local
+  hosts: localhost
   gather_facts: False
   tasks:
     - name: Server build requests

@@ -1,5 +1,5 @@
 - name: Create several servers and put them in a group
-  hosts: local
+  hosts: localhost
   gather_facts: False
   tasks:
     - name: Server build requests
