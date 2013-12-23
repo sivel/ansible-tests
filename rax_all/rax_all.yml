@@ -1,0 +1,187 @@
+---
+- name: Build environment
+  hosts: local
+  connection: local
+  gather_facts: False
+  tasks:
+    - name: Assemble ssh authroized_keys
+      local_action:
+        module: assemble
+        src: files/authorized_keys
+        dest: files/authorized_keys.pub
+        remote_src: False
+      register: assemble
+
+    - name: Remove previous keypair
+      local_action:
+        module: rax_keypair
+        credentials: ~/.raxpub
+        name: all
+        state: absent
+        region: IAD
+      when: assemble|changed
+
+    - name: Upload keypair
+      local_action:
+        module: rax_keypair
+        credentials: ~/.raxpub
+        name: all
+        public_key: "{{ lookup('file', 'files/authorized_keys.pub') }}"
+        region: IAD
+      when: assemble|changed
+
+    - name: Domain create request
+      local_action:
+        module: rax_dns
+        credentials: ~/.raxpub
+        name: example.org
+        state: present
+        email: admin@rxample.org
+        comment: foo
+      register: rax_dns
+
+    - name: Load Balancer create request
+      local_action:
+        module: rax_clb
+        credentials: ~/.raxpub
+        name: my-lb
+        port: 80
+        protocol: HTTP
+        type: PUBLIC
+        timeout: 30
+        region: IAD
+        wait: yes
+        state: present
+        meta:
+          app: my-cool-app
+      register: clb_http
+
+    - name: Create VIP DNS record
+      local_action:
+        module: rax_dns_record
+        credentials: ~/.raxpub
+        domain: example.org
+        name: www.example.org
+        state: present
+        data: "{{ (clb_http.balancer.virtual_ips|first).address }}"
+        type: A
+        comment: my-cool-app
+
+    - name: Provision HTTPS Load Balancer
+      local_action:
+        module: rax_clb
+        credentials: ~/.raxpub
+        name: my-lb-https
+        vip_id: "{{ (clb_http.balancer.virtual_ips|first).id }}"
+        port: 443
+        protocol: HTTPS
+        type: PUBLIC
+        timeout: 30
+        region: IAD
+        wait: yes
+        state: present
+        meta:
+          app: my-cool-app
+      register: clb_https
+
+    - name: Network create request
+      local_action:
+        module: rax_network
+        credentials: ~/.raxpub
+        label: my-net
+        cidr: 192.168.3.0/24
+        state: present
+        region: IAD
+      register: network
+
+    - name: Server create request
+      local_action:
+        module: rax
+        credentials: ~/.raxpub
+        name: web%04d.example.org
+        flavor: performance1-1
+        image: ubuntu-1204-lts-precise-pangolin
+        key_name: all
+        disk_config: manual
+        networks:
+          - public
+          - private
+          - my-net
+        region: IAD
+        state: present
+        count: 5
+        exact_count: yes
+        group: web
+        wait: yes
+      register: rax
+
+    - name: Create Host DNS record
+      local_action:
+        module: rax_dns_record
+        credentials: ~/.raxpub
+        domain: example.org
+        name: "{{ item.rax_name|replace('.example.org', '') }}.example.org"
+        state: present
+        data: "{{ item.rax_accessipv4 }}"
+        type: A
+        comment: "{{ item.rax_name }}"
+      with_items: rax.success
+      when: rax.action == 'create'
+
+    - name: Add servers to web host group
+      local_action:
+        module: add_host
+        hostname: "{{ item.name }}"
+        ansible_ssh_host: "{{ item.rax_accessipv4 }}"
+        ansible_ssh_pass: "{{ item.rax_adminpass }}"
+        ansible_ssh_user: root
+        groupname: web
+      with_items: rax.success
+      when: rax.action == 'create'
+
+    - name: Add servers to HTTP Load balancer
+      local_action:
+        module: rax_clb_nodes
+        credentials: ~/.raxpub
+        load_balancer_id: "{{ clb_http.balancer.id }}"
+        address: "{{ item.rax_networks.private|first }}"
+        port: 80
+        condition: enabled
+        type: primary
+        wait: yes
+        region: IAD
+      with_items: rax.success
+      when: rax.action == 'create'
+
+    - name: Add servers to HTTPS Load balancer
+      local_action:
+        module: rax_clb_nodes
+        credentials: ~/.raxpub
+        load_balancer_id: "{{ clb_https.balancer.id }}"
+        address: "{{ item.rax_networks.private|first }}"
+        port: 80
+        condition: enabled
+        type: primary
+        wait: yes
+        region: IAD
+      with_items: rax.success
+      when: rax.action == 'create'
+
+- name: Configure servers
+  hosts: web
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
+
+  tasks:
+    - name: Install nginx
+      apt: pkg=nginx state=latest update_cache=yes cache_valid_time=86400
+      notify:
+        - restart nginx
+
+    - name: Ensure nginx starts on boot
+      service: name=nginx state=started enabled=yes
+
+    - name: Create custom index.html
+      copy: content="{{ inventory_hostname }}" dest=/usr/share/nginx/www/index.html
+            owner=root group=root mode=0644
