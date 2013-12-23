@@ -1,0 +1,37 @@
+- name: Build a Load Balancer
+  gather_facts: False
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Provision HTTP Load Balancer
+      local_action:
+        module: rax_clb
+        credentials: ~/.raxpub
+        name: my-lb-http
+        port: 80
+        protocol: HTTP
+        type: PUBLIC
+        timeout: 30
+        region: IAD
+        wait: yes
+        state: present
+        meta:
+          foo: baz
+      register: my_lb_http
+
+    - name: Provision HTTPS Load Balancer
+      local_action:
+        module: rax_clb
+        credentials: ~/.raxpub
+        name: my-lb-https
+        vip_id: "{{ (my_lb_http.balancer.virtual_ips|first).id }}"
+        port: 443
+        protocol: HTTPS
+        type: PUBLIC
+        timeout: 30
+        region: IAD
+        wait: yes
+        state: present
+        meta:
+          foo: baz
+

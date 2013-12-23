@@ -1,0 +1,21 @@
+- name: Build a Load Balancer
+  gather_facts: False
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Provision Load Balancer
+      local_action:
+        module: rax_clb
+        credentials: ~/.raxpub
+        name: my-lb
+        port: 8080
+        protocol: HTTP
+        type: PUBLIC
+        timeout: 30
+        region: IAD
+        wait: yes
+        state: present
+        meta:
+          foo: baz
+      register: my_lb
+
