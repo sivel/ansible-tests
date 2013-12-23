@@ -1,0 +1,22 @@
+- name: Create a keypair
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: keypair request
+      local_action:
+        module: rax_keypair
+        credentials: ~/.raxpub
+        name: my_keypair
+        region: IAD
+        state: present
+      register: keypair
+    - name: Create local public key
+      local_action:
+        module: copy
+        content: "{{ keypair.keypair.public_key }}"
+        dest: "{{ inventory_dir }}/{{ keypair.keypair.name }}.pub"
+    - name: Create local private key
+      local_action:
+        module: copy
+        content: "{{ keypair.keypair.private_key }}"
+        dest: "{{ inventory_dir }}/{{ keypair.keypair.name }}"
