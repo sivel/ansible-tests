@@ -1,0 +1,47 @@
+---
+- hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Server build request
+      local_action:
+        module: rax_cdb
+        credentials: ~/.raxpub
+        region: IAD
+        name: db-server1
+        flavor: 1
+        volume: 2
+        wait: yes
+        state: present
+      register: rax_db_server
+
+    - debug:
+        var: rax_db_server
+
+    - name: Database build request
+      local_action:
+        module: rax_cdb_database
+        credentials: ~/.raxpub
+        region: IAD
+        cdb_id: "{{rax_db_server.cdb.id}}"
+        name: db1
+        state: present
+      register: rax_db_database
+
+    - debug:
+        var: rax_db_database
+
+    - name: User build request
+      local_action:
+        module: rax_cdb_user
+        credentials: ~/.raxpub
+        region: IAD
+        cdb_id: "{{rax_db_server.cdb.id}}"
+        db_username: user1
+        db_password: user1
+        databases:
+          - "{{rax_db_database.database.name}}"
+        state: present
+      register: rax_db_user
+
+    - debug:
+        var: rax_db_user
