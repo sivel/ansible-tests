@@ -1,0 +1,601 @@
+---
+- name: Check for required variables
+  assert:
+    that:
+      - rax_uuid is defined and rax_uuid
+      - rax_username is defined and rax_username
+      - rax_api_key is defined and rax_api_key
+
+# ============================================================
+- name: Test rax with no args
+  rax:
+  ignore_errors: true
+  register: rax
+
+- name: Validate results of rax with no args
+  assert:
+    that:
+      - rax|failed
+      - rax.msg == 'No credentials supplied!'
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax with credentials
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+  ignore_errors: true
+  register: rax
+
+- name: Validate results of rax with only creds
+  assert:
+    that:
+      - rax|failed
+      - rax.msg.startswith('None is not a valid region')
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax with creds and region
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+  ignore_errors: true
+  register: rax
+
+- name: Validate rax creds and region
+  assert:
+    that:
+      - rax|failed
+      - rax.msg == 'image is required for the "rax" module'
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax with creds, region and image
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+  ignore_errors: true
+  register: rax
+
+- name: Validate rax with creds, region and image
+  assert:
+    that:
+      - rax|failed
+      - rax.msg == 'flavor is required for the "rax" module'
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax with creds, region, image and flavor
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+  ignore_errors: true
+  register: rax
+
+- name: Validate rax with creds, region, image and flavor
+  assert:
+    that:
+      - rax|failed
+      - rax.msg == 'name is required for the "rax" module'
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax with creds, region, image, flavor and name
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-1"
+  register: rax
+
+- name: Validate rax with creds, region, image, flavor and name
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 1
+      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-1"
+      - rax.instances[0] == rax.success[0]
+      - rax.instances[0].rax_status == 'BUILD'
+
+- name: "Delete ansible-integration-{{ rax_uuid }}-1"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-1"
+    state: absent
+    wait: true
+  register: rax
+
+- name: "Validate delete ansible-integration-{{ rax_uuid }}-1"
+  assert:
+    that:
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success[0].name == "ansible-integration-{{ rax_uuid }}-1"
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax basic idempotency 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-2"
+    wait: true
+  register: rax
+
+- name: Validate rax basic idepmpotency 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 1
+      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-2"
+      - rax.instances[0] == rax.success[0]
+      - rax.instances[0].rax_status == 'ACTIVE'
+
+- name: Test rax basic idempotency 2
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-2"
+    wait: true
+  register: rax
+
+- name: Validate rax basic idempotency 2
+  assert:
+    that:
+      - rax|success
+      - not rax|changed
+      - not rax.action
+      - rax.instances|length == 1
+      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-2"
+      - not rax.success
+
+- name: "Delete ansible-integration-{{ rax_uuid }}-2"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-2"
+    state: absent
+    wait: true
+  register: rax
+
+- name: "Validate delete ansible-integration-{{ rax_uuid }}-2"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success[0].name == "ansible-integration-{{ rax_uuid }}-2"
+      - rax.success[0].rax_status == "DELETED"
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax basic idempotency with meta 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-3"
+    meta:
+      foo: bar
+    wait: true
+  register: rax
+
+- name: Validate rax basic idepmpotency with meta 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 1
+      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-3"
+      - rax.instances[0] == rax.success[0]
+      - rax.instances[0].rax_status == 'ACTIVE'
+      - rax.instances[0].rax_metadata.foo == 'bar'
+
+- name: Test rax basic idempotency with meta 2
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-3"
+    meta:
+      foo: bar
+    wait: true
+  register: rax
+
+- name: Validate rax basic idempotency with meta 2
+  assert:
+    that:
+      - rax|success
+      - not rax|changed
+      - not rax.action
+      - rax.instances|length == 1
+      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-3"
+      - not rax.success
+
+- name: "Delete ansible-integration-{{ rax_uuid }}-3"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-3"
+    state: absent
+    meta:
+      foo: bar
+    wait: true
+  register: rax
+
+- name: "Validate delete ansible-integration-{{ rax_uuid }}-3"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success[0].name == "ansible-integration-{{ rax_uuid }}-3"
+      - rax.success[0].rax_status == "DELETED"
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax basic idempotency multi server 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-4"
+    count: 2
+    wait: true
+  register: rax
+
+- name: Validate rax basic idepmpotency multi server 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+
+- name: Test rax basic idempotency multi server 2
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-4"
+    count: 2
+    wait: true
+  register: rax
+
+- name: Validate rax basic idempotency multi server 2
+  assert:
+    that:
+      - rax|success
+      - not rax|changed
+      - not rax.action
+      - rax.instances|length == 2
+      - not rax.success
+
+- name: Test rax basic idempotency multi server 3
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-4"
+    count: 3
+    wait: true
+  register: rax
+
+- name: Validate rax basic idempotency multi server 3
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 3
+      - rax.success|length == 1
+
+- name: "Delete ansible-integration-{{ rax_uuid }}-4"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-4"
+    count: 3
+    state: absent
+    wait: true
+  register: rax
+
+- name: "Validate delete ansible-integration-{{ rax_uuid }}-4"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 3
+      - not rax.instances
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax multi server group without exact_count 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-5-%02d"
+    count: 2
+    group: "ansible-integration-{{ rax_uuid }}-5"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group without exact_count 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+      - rax.instances|map(attribute='rax_name')|unique|length == 2
+
+- name: "Test delete ansible-integration-{{ rax_uuid }}-5"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-5-%02d"
+    count: 2
+    group: "ansible-integration-{{ rax_uuid }}-5"
+    wait: true
+    state: absent
+  register: rax
+
+- name: "Validate delete ansible-integration-{{ rax_uuid }}-5"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 2
+      - not rax.instances
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax multi server group without exact_count non-idempotency 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-6-%02d"
+    count: 2
+    group: "ansible-integration-{{ rax_uuid }}-6"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group without exact_count non-idempotency 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+      - rax.instances|map(attribute='rax_name')|unique|length == 2
+
+- name: Test rax multi server group without exact_count non-idempotency 2
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-6-%02d"
+    count: 2
+    group: "ansible-integration-{{ rax_uuid }}-6"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group without exact_count non-idempotency 2
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 4
+      - rax.instances|map(attribute='rax_name')|unique|length == 4
+
+- name: "Test delete ansible-integration-{{ rax_uuid }}-6"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-6-%02d"
+    count: 4
+    group: "ansible-integration-{{ rax_uuid }}-6"
+    wait: true
+    state: absent
+  register: rax
+
+- name: "Validate delete ansible-integration-{{ rax_uuid }}-6"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 4
+      - not rax.instances
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax multi server group with exact_count 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    count: 2
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-7"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group with exact_count 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+      - rax.instances|map(attribute='rax_name')|unique|length == 2
+
+- name: Test rax multi server group with exact_count 2
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    count: 2
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-7"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group with exact_count 2
+  assert:
+    that:
+      - rax|success
+      - not rax|changed
+      - not rax.action
+      - rax.instances|length == 2
+      - rax.instances|map(attribute='rax_name')|unique|length == 2
+
+- name: Test rax multi server group with exact_count 3
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    count: 4
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-7"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group with exact_count 3
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 4
+      - rax.success|length == 2
+      - rax.instances|map(attribute='rax_name')|unique|length == 4
+
+
+- name: "Test delete ansible-integration-{{ rax_uuid }}-7"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    count: 0
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-7"
+    wait: true
+  register: rax
+
+- name: "Validate delete ansible-integration-{{ rax_uuid }}-7"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 4
+      - not rax.instances
+# ============================================================
+
+
+
+# ============================================================
+# ============================================================
+
+
+
+# ============================================================
+# ============================================================

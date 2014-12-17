@@ -1,0 +1,9 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - rax_vars.yml
+  roles:
+    - role: test_rax
+      rax_uuid: "{{ uuid_string }}"
