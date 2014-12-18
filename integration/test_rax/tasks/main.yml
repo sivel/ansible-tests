@@ -117,7 +117,7 @@
       - rax.instances[0] == rax.success[0]
       - rax.instances[0].rax_status == 'BUILD'
 
-- name: "Delete ansible-integration-{{ rax_uuid }}-1"
+- name: "Delete integration 1"
   rax:
     username: "{{ rax_username }}"
     api_key: "{{ rax_api_key }}"
@@ -129,7 +129,7 @@
     wait: true
   register: rax
 
-- name: "Validate delete ansible-integration-{{ rax_uuid }}-1"
+- name: "Validate delete integration 1"
   assert:
     that:
       - rax|changed
@@ -183,7 +183,7 @@
       - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-2"
       - not rax.success
 
-- name: "Delete ansible-integration-{{ rax_uuid }}-2"
+- name: "Delete integration 2"
   rax:
     username: "{{ rax_username }}"
     api_key: "{{ rax_api_key }}"
@@ -195,7 +195,7 @@
     wait: true
   register: rax
 
-- name: "Validate delete ansible-integration-{{ rax_uuid }}-2"
+- name: "Validate delete integration 2"
   assert:
     that:
       - rax|success
@@ -256,7 +256,7 @@
       - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-3"
       - not rax.success
 
-- name: "Delete ansible-integration-{{ rax_uuid }}-3"
+- name: "Delete integration 3"
   rax:
     username: "{{ rax_username }}"
     api_key: "{{ rax_api_key }}"
@@ -270,7 +270,7 @@
     wait: true
   register: rax
 
-- name: "Validate delete ansible-integration-{{ rax_uuid }}-3"
+- name: "Validate delete integration 3"
   assert:
     that:
       - rax|success
@@ -346,7 +346,7 @@
       - rax.instances|length == 3
       - rax.success|length == 1
 
-- name: "Delete ansible-integration-{{ rax_uuid }}-4"
+- name: "Delete integration 4"
   rax:
     username: "{{ rax_username }}"
     api_key: "{{ rax_api_key }}"
@@ -359,7 +359,7 @@
     wait: true
   register: rax
 
-- name: "Validate delete ansible-integration-{{ rax_uuid }}-4"
+- name: "Validate delete integration 4"
   assert:
     that:
       - rax|success
@@ -395,7 +395,7 @@
       - rax.instances == rax.success
       - rax.instances|map(attribute='rax_name')|unique|length == 2
 
-- name: "Test delete ansible-integration-{{ rax_uuid }}-5"
+- name: "Test delete integration 5"
   rax:
     username: "{{ rax_username }}"
     api_key: "{{ rax_api_key }}"
@@ -409,7 +409,7 @@
     state: absent
   register: rax
 
-- name: "Validate delete ansible-integration-{{ rax_uuid }}-5"
+- name: "Validate delete integration 5"
   assert:
     that:
       - rax|success
@@ -467,7 +467,7 @@
       - rax.instances|length == 4
       - rax.instances|map(attribute='rax_name')|unique|length == 4
 
-- name: "Test delete ansible-integration-{{ rax_uuid }}-6"
+- name: "Test delete integration 6"
   rax:
     username: "{{ rax_username }}"
     api_key: "{{ rax_api_key }}"
@@ -481,7 +481,7 @@
     state: absent
   register: rax
 
-- name: "Validate delete ansible-integration-{{ rax_uuid }}-6"
+- name: "Validate delete integration 6"
   assert:
     that:
       - rax|success
@@ -566,7 +566,7 @@
       - rax.instances|map(attribute='rax_name')|unique|length == 4
 
 
-- name: "Test delete ansible-integration-{{ rax_uuid }}-7"
+- name: "Test delete integration 7"
   rax:
     username: "{{ rax_username }}"
     api_key: "{{ rax_api_key }}"
@@ -580,7 +580,7 @@
     wait: true
   register: rax
 
-- name: "Validate delete ansible-integration-{{ rax_uuid }}-7"
+- name: "Validate delete integration 7"
   assert:
     that:
       - rax|success
@@ -593,6 +593,157 @@
 
 
 # ============================================================
+- name: Test rax multi server group without exact_count and disabled auto_increment 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-8"
+    count: 2
+    group: "ansible-integration-{{ rax_uuid }}-8"
+    auto_increment: false
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group without exact_count and disabled auto_increment 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+      - rax.instances|map(attribute='rax_name')|unique|length == 1
+
+- name: "Test delete integration 8"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-8"
+    count: 2
+    group: "ansible-integration-{{ rax_uuid }}-8"
+    auto_increment: false
+    wait: true
+    state: absent
+  register: rax
+
+- name: "Validate delete integration 8"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 2
+      - not rax.instances
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax multi server group with exact_count and no printf 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-9"
+    count: 2
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-9"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group with exact_count and no printf 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+      - rax.instances|map(attribute='rax_name')|unique|list == ['ansible-integration-' + rax_uuid + '-91', 'ansible-integration-' + rax_uuid + '-92']
+
+- name: "Test delete integration 9"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-9"
+    count: 0
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-9"
+    wait: true
+  register: rax
+
+- name: "Validate delete integration 9"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 2
+      - not rax.instances
+# ============================================================
+
+
+
+# ============================================================
+- name: Test rax multi server group with exact_count and offset 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    count: 2
+    count_offset: 10
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-10"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group with exact_count and offset 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+      - rax.instances|map(attribute='rax_name')|unique|list == ['ansible-integration-' + rax_uuid + '-10-010', 'ansible-integration-' + rax_uuid + '-10-011']
+
+- name: "Test delete integration 10"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    count: 0
+    count_offset: 10
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-10"
+    wait: true
+  register: rax
+
+- name: "Validate delete integration 10"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 2
+      - not rax.instances
 # ============================================================
 
 
