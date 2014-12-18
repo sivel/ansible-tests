@@ -667,7 +667,7 @@
       - rax.action == 'create'
       - rax.instances|length == 2
       - rax.instances == rax.success
-      - rax.instances|map(attribute='rax_name')|unique|list == ['ansible-integration-' + rax_uuid + '-91', 'ansible-integration-' + rax_uuid + '-92']
+      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ rax_uuid }}-91', 'ansible-integration-{{ rax_uuid }}-92']
 
 - name: "Test delete integration 9"
   rax:
@@ -719,7 +719,7 @@
       - rax.action == 'create'
       - rax.instances|length == 2
       - rax.instances == rax.success
-      - rax.instances|map(attribute='rax_name')|unique|list == ['ansible-integration-' + rax_uuid + '-10-010', 'ansible-integration-' + rax_uuid + '-10-011']
+      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ rax_uuid }}-10-010', 'ansible-integration-{{ rax_uuid }}-10-011']
 
 - name: "Test delete integration 10"
   rax:
@@ -749,4 +749,52 @@
 
 
 # ============================================================
+- name: Test rax multi server group with exact_count and offset 1
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    count: 2
+    count_offset: 10
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-10"
+    wait: true
+  register: rax
+
+- name: Validate rax multi server group with exact_count and offset 1
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'create'
+      - rax.instances|length == 2
+      - rax.instances == rax.success
+      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ rax_uuid }}-10-010', 'ansible-integration-{{ rax_uuid }}-10-011']
+
+- name: "Test delete integration 10"
+  rax:
+    username: "{{ rax_username }}"
+    api_key: "{{ rax_api_key }}"
+    region: IAD
+    image: ubuntu-1204-lts-precise-pangolin
+    flavor: performance1-1
+    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    count: 0
+    count_offset: 10
+    exact_count: true
+    group: "ansible-integration-{{ rax_uuid }}-10"
+    wait: true
+  register: rax
+
+- name: "Validate delete integration 10"
+  assert:
+    that:
+      - rax|success
+      - rax|changed
+      - rax.action == 'delete'
+      - rax.success|length == 2
+      - not rax.instances
 # ============================================================
