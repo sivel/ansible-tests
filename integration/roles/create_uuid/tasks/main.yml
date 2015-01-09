@@ -1,0 +1,4 @@
+- name: Generate a UUID
+  set_fact:
+    test_uuid: "{{ lookup('pipe', 'python -c \\'import uuid; print uuid.uuid4()\\'') }}"
+  run_once: true

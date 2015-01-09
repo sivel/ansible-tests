@@ -1,2 +1,0 @@
----
-rax_uuid: "{{ 0|id|string|md5|truncate(6, True, '') }}"

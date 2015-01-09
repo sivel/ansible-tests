@@ -2,9 +2,10 @@
 - name: Check for required variables
   assert:
     that:
-      - rax_uuid is defined and rax_uuid
-      - rax_username is defined and rax_username
-      - rax_api_key is defined and rax_api_key
+      - test_uuid is defined and test_uuid
+      - rackspace_username is defined and rackspace_username
+      - rackspace_api_key is defined and rackspace_api_key
+      - rackspace_region is defined and rackspace_region
 
 # ============================================================
 - name: Test rax with no args
@@ -24,8 +25,8 @@
 # ============================================================
 - name: Test rax with credentials
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
   ignore_errors: true
   register: rax
 
@@ -41,9 +42,9 @@
 # ============================================================
 - name: Test rax with creds and region
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
   ignore_errors: true
   register: rax
 
@@ -59,9 +60,9 @@
 # ============================================================
 - name: Test rax with creds, region and image
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
   ignore_errors: true
   register: rax
@@ -78,9 +79,9 @@
 # ============================================================
 - name: Test rax with creds, region, image and flavor
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
   ignore_errors: true
@@ -98,12 +99,12 @@
 # ============================================================
 - name: Test rax with creds, region, image, flavor and name
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-1"
+    name: "ansible-integration-{{ test_uuid }}-1"
   register: rax
 
 - name: Validate rax with creds, region, image, flavor and name
@@ -113,18 +114,18 @@
       - rax|changed
       - rax.action == 'create'
       - rax.instances|length == 1
-      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-1"
+      - rax.instances[0].name == "ansible-integration-{{ test_uuid }}-1"
       - rax.instances[0] == rax.success[0]
       - rax.instances[0].rax_status == 'BUILD'
 
 - name: "Delete integration 1"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-1"
+    name: "ansible-integration-{{ test_uuid }}-1"
     state: absent
     wait: true
   register: rax
@@ -134,7 +135,7 @@
     that:
       - rax|changed
       - rax.action == 'delete'
-      - rax.success[0].name == "ansible-integration-{{ rax_uuid }}-1"
+      - rax.success[0].name == "ansible-integration-{{ test_uuid }}-1"
 # ============================================================
 
 
@@ -142,12 +143,12 @@
 # ============================================================
 - name: Test rax basic idempotency 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-2"
+    name: "ansible-integration-{{ test_uuid }}-2"
     wait: true
   register: rax
 
@@ -158,18 +159,18 @@
       - rax|changed
       - rax.action == 'create'
       - rax.instances|length == 1
-      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-2"
+      - rax.instances[0].name == "ansible-integration-{{ test_uuid }}-2"
       - rax.instances[0] == rax.success[0]
       - rax.instances[0].rax_status == 'ACTIVE'
 
 - name: Test rax basic idempotency 2
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-2"
+    name: "ansible-integration-{{ test_uuid }}-2"
     wait: true
   register: rax
 
@@ -180,17 +181,17 @@
       - not rax|changed
       - not rax.action
       - rax.instances|length == 1
-      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-2"
+      - rax.instances[0].name == "ansible-integration-{{ test_uuid }}-2"
       - not rax.success
 
 - name: "Delete integration 2"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-2"
+    name: "ansible-integration-{{ test_uuid }}-2"
     state: absent
     wait: true
   register: rax
@@ -201,7 +202,7 @@
       - rax|success
       - rax|changed
       - rax.action == 'delete'
-      - rax.success[0].name == "ansible-integration-{{ rax_uuid }}-2"
+      - rax.success[0].name == "ansible-integration-{{ test_uuid }}-2"
       - rax.success[0].rax_status == "DELETED"
 # ============================================================
 
@@ -210,12 +211,12 @@
 # ============================================================
 - name: Test rax basic idempotency with meta 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-3"
+    name: "ansible-integration-{{ test_uuid }}-3"
     meta:
       foo: bar
     wait: true
@@ -228,19 +229,19 @@
       - rax|changed
       - rax.action == 'create'
       - rax.instances|length == 1
-      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-3"
+      - rax.instances[0].name == "ansible-integration-{{ test_uuid }}-3"
       - rax.instances[0] == rax.success[0]
       - rax.instances[0].rax_status == 'ACTIVE'
       - rax.instances[0].rax_metadata.foo == 'bar'
 
 - name: Test rax basic idempotency with meta 2
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-3"
+    name: "ansible-integration-{{ test_uuid }}-3"
     meta:
       foo: bar
     wait: true
@@ -253,17 +254,17 @@
       - not rax|changed
       - not rax.action
       - rax.instances|length == 1
-      - rax.instances[0].name == "ansible-integration-{{ rax_uuid }}-3"
+      - rax.instances[0].name == "ansible-integration-{{ test_uuid }}-3"
       - not rax.success
 
 - name: "Delete integration 3"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-3"
+    name: "ansible-integration-{{ test_uuid }}-3"
     state: absent
     meta:
       foo: bar
@@ -276,7 +277,7 @@
       - rax|success
       - rax|changed
       - rax.action == 'delete'
-      - rax.success[0].name == "ansible-integration-{{ rax_uuid }}-3"
+      - rax.success[0].name == "ansible-integration-{{ test_uuid }}-3"
       - rax.success[0].rax_status == "DELETED"
 # ============================================================
 
@@ -285,12 +286,12 @@
 # ============================================================
 - name: Test rax basic idempotency multi server 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-4"
+    name: "ansible-integration-{{ test_uuid }}-4"
     count: 2
     wait: true
   register: rax
@@ -306,12 +307,12 @@
 
 - name: Test rax basic idempotency multi server 2
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-4"
+    name: "ansible-integration-{{ test_uuid }}-4"
     count: 2
     wait: true
   register: rax
@@ -327,12 +328,12 @@
 
 - name: Test rax basic idempotency multi server 3
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-4"
+    name: "ansible-integration-{{ test_uuid }}-4"
     count: 3
     wait: true
   register: rax
@@ -348,12 +349,12 @@
 
 - name: "Delete integration 4"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-4"
+    name: "ansible-integration-{{ test_uuid }}-4"
     count: 3
     state: absent
     wait: true
@@ -374,14 +375,14 @@
 # ============================================================
 - name: Test rax multi server group without exact_count 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-5-%02d"
+    name: "ansible-integration-{{ test_uuid }}-5-%02d"
     count: 2
-    group: "ansible-integration-{{ rax_uuid }}-5"
+    group: "ansible-integration-{{ test_uuid }}-5"
     wait: true
   register: rax
 
@@ -397,14 +398,14 @@
 
 - name: "Test delete integration 5"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-5-%02d"
+    name: "ansible-integration-{{ test_uuid }}-5-%02d"
     count: 2
-    group: "ansible-integration-{{ rax_uuid }}-5"
+    group: "ansible-integration-{{ test_uuid }}-5"
     wait: true
     state: absent
   register: rax
@@ -424,14 +425,14 @@
 # ============================================================
 - name: Test rax multi server group without exact_count non-idempotency 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-6-%02d"
+    name: "ansible-integration-{{ test_uuid }}-6-%02d"
     count: 2
-    group: "ansible-integration-{{ rax_uuid }}-6"
+    group: "ansible-integration-{{ test_uuid }}-6"
     wait: true
   register: rax
 
@@ -447,14 +448,14 @@
 
 - name: Test rax multi server group without exact_count non-idempotency 2
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-6-%02d"
+    name: "ansible-integration-{{ test_uuid }}-6-%02d"
     count: 2
-    group: "ansible-integration-{{ rax_uuid }}-6"
+    group: "ansible-integration-{{ test_uuid }}-6"
     wait: true
   register: rax
 
@@ -469,14 +470,14 @@
 
 - name: "Test delete integration 6"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-6-%02d"
+    name: "ansible-integration-{{ test_uuid }}-6-%02d"
     count: 4
-    group: "ansible-integration-{{ rax_uuid }}-6"
+    group: "ansible-integration-{{ test_uuid }}-6"
     wait: true
     state: absent
   register: rax
@@ -496,15 +497,15 @@
 # ============================================================
 - name: Test rax multi server group with exact_count 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    name: "ansible-integration-{{ test_uuid }}-7-%02d"
     count: 2
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-7"
+    group: "ansible-integration-{{ test_uuid }}-7"
     wait: true
   register: rax
 
@@ -520,15 +521,15 @@
 
 - name: Test rax multi server group with exact_count 2
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    name: "ansible-integration-{{ test_uuid }}-7-%02d"
     count: 2
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-7"
+    group: "ansible-integration-{{ test_uuid }}-7"
     wait: true
   register: rax
 
@@ -543,15 +544,15 @@
 
 - name: Test rax multi server group with exact_count 3
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    name: "ansible-integration-{{ test_uuid }}-7-%02d"
     count: 4
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-7"
+    group: "ansible-integration-{{ test_uuid }}-7"
     wait: true
   register: rax
 
@@ -568,15 +569,15 @@
 
 - name: "Test delete integration 7"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-7-%02d"
+    name: "ansible-integration-{{ test_uuid }}-7-%02d"
     count: 0
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-7"
+    group: "ansible-integration-{{ test_uuid }}-7"
     wait: true
   register: rax
 
@@ -595,14 +596,14 @@
 # ============================================================
 - name: Test rax multi server group without exact_count and disabled auto_increment 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-8"
+    name: "ansible-integration-{{ test_uuid }}-8"
     count: 2
-    group: "ansible-integration-{{ rax_uuid }}-8"
+    group: "ansible-integration-{{ test_uuid }}-8"
     auto_increment: false
     wait: true
   register: rax
@@ -619,14 +620,14 @@
 
 - name: "Test delete integration 8"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-8"
+    name: "ansible-integration-{{ test_uuid }}-8"
     count: 2
-    group: "ansible-integration-{{ rax_uuid }}-8"
+    group: "ansible-integration-{{ test_uuid }}-8"
     auto_increment: false
     wait: true
     state: absent
@@ -647,15 +648,15 @@
 # ============================================================
 - name: Test rax multi server group with exact_count and no printf 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-9"
+    name: "ansible-integration-{{ test_uuid }}-9"
     count: 2
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-9"
+    group: "ansible-integration-{{ test_uuid }}-9"
     wait: true
   register: rax
 
@@ -667,19 +668,19 @@
       - rax.action == 'create'
       - rax.instances|length == 2
       - rax.instances == rax.success
-      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ rax_uuid }}-91', 'ansible-integration-{{ rax_uuid }}-92']
+      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ test_uuid }}-91', 'ansible-integration-{{ test_uuid }}-92']
 
 - name: "Test delete integration 9"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-9"
+    name: "ansible-integration-{{ test_uuid }}-9"
     count: 0
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-9"
+    group: "ansible-integration-{{ test_uuid }}-9"
     wait: true
   register: rax
 
@@ -698,16 +699,16 @@
 # ============================================================
 - name: Test rax multi server group with exact_count and offset 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    name: "ansible-integration-{{ test_uuid }}-10-%03d"
     count: 2
     count_offset: 10
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-10"
+    group: "ansible-integration-{{ test_uuid }}-10"
     wait: true
   register: rax
 
@@ -719,20 +720,20 @@
       - rax.action == 'create'
       - rax.instances|length == 2
       - rax.instances == rax.success
-      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ rax_uuid }}-10-010', 'ansible-integration-{{ rax_uuid }}-10-011']
+      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ test_uuid }}-10-010', 'ansible-integration-{{ test_uuid }}-10-011']
 
 - name: "Test delete integration 10"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    name: "ansible-integration-{{ test_uuid }}-10-%03d"
     count: 0
     count_offset: 10
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-10"
+    group: "ansible-integration-{{ test_uuid }}-10"
     wait: true
   register: rax
 
@@ -751,16 +752,16 @@
 # ============================================================
 - name: Test rax multi server group with exact_count and offset 1
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    name: "ansible-integration-{{ test_uuid }}-10-%03d"
     count: 2
     count_offset: 10
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-10"
+    group: "ansible-integration-{{ test_uuid }}-10"
     wait: true
   register: rax
 
@@ -772,20 +773,20 @@
       - rax.action == 'create'
       - rax.instances|length == 2
       - rax.instances == rax.success
-      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ rax_uuid }}-10-010', 'ansible-integration-{{ rax_uuid }}-10-011']
+      - rax.instances|map(attribute='rax_name')|unique|list|sort == ['ansible-integration-{{ test_uuid }}-10-010', 'ansible-integration-{{ test_uuid }}-10-011']
 
 - name: "Test delete integration 10"
   rax:
-    username: "{{ rax_username }}"
-    api_key: "{{ rax_api_key }}"
-    region: IAD
+    username: "{{ rackspace_username }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
     image: ubuntu-1204-lts-precise-pangolin
     flavor: performance1-1
-    name: "ansible-integration-{{ rax_uuid }}-10-%03d"
+    name: "ansible-integration-{{ test_uuid }}-10-%03d"
     count: 0
     count_offset: 10
     exact_count: true
-    group: "ansible-integration-{{ rax_uuid }}-10"
+    group: "ansible-integration-{{ test_uuid }}-10"
     wait: true
   register: rax
 

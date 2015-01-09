@@ -3,4 +3,5 @@
   connection: local
   gather_facts: false
   roles:
+    - role: create_uuid
     - role: test_rax
